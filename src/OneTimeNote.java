@@ -78,6 +78,38 @@ class OneTimeNote {
         times_beat = 1;
     }
 
+    public void upOctave() {
+        for (int i = 0; i < nNotes; i++) {
+            switch (notes[i].charAt(0)) {
+                case '0':
+                case '+':
+                    break;
+                case '-':
+                    notes[i] = notes[i].substring(1);
+                    break;
+                default:
+                    notes[i] = '+' + notes[i];
+                    break;
+            }
+        }
+    }
+
+    public void downOctave() {
+        for (int i = 0; i < nNotes; i++) {
+            switch (notes[i].charAt(0)) {
+                case '0':
+                case '-':
+                    break;
+                case '+':
+                    notes[i] = notes[i].substring(1);
+                    break;
+                default:
+                    notes[i] = '-' + notes[i];
+                    break;
+            }
+        }
+    }
+
     public static char noteToKey(String note) throws Exception {
         if (!note_key.containsKey(note)) {
             throw new Exception("ERR:no key match note '" + note + "'");
@@ -88,7 +120,6 @@ class OneTimeNote {
     public static boolean isNote(String note) {
         return note_key.containsKey(note);
     }
-
 
     @Override
     public String toString() {
