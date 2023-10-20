@@ -1,3 +1,4 @@
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 public class Player {
@@ -39,6 +40,8 @@ public class Player {
     }
 
     public void PlayOne(OneTimeNote oneTimeNote) throws Exception {
+        judgeAndDoStop();
+
         int delay = (int)(oneBeatMS * oneTimeNote.times_beat);
         switch (oneTimeNote.nNotes) {
             case 1:
@@ -68,6 +71,14 @@ public class Player {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+        }
+    }
+
+    private void judgeAndDoStop() throws Exception {
+        if (HotKey.getInstance().isNewKeyPressed(KeyEvent.VK_F5)) {
+            HotKey.getInstance().cleanUp();
+            System.out.println("检测到按下F5，直接结束。");
+            System.exit(0);
         }
     }
 

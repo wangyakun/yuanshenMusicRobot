@@ -1,6 +1,5 @@
 import java.awt.*;
 
-//todo: new thread 监测ESC退出
 public class Main {
     public static void main(String[] args) throws Exception {
         Player player = new Player();
