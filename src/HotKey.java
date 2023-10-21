@@ -16,14 +16,21 @@ public class HotKey {
         return INSTANCE;
     }
 
-    HashMap<Integer, Boolean> hotKeyNewPressedMap = new HashMap<>();
+    private HotKeyHandler handler;
+    private HashMap<Integer, Boolean> hotKeyNewPressedMap;
     private HotKey() {
-        registerHotKey(KeyEvent.VK_F5);
+        System.out.println("HotKey()");
+        handler = new HotKeyHandler();
+        hotKeyNewPressedMap = new HashMap<>();
+
+        handler.registerHotKeys(this);
         //第二步：添加热键监听器
         JIntellitype.getInstance().addHotKeyListener(new HotkeyListener() {
             @Override
             public void onHotKey(int markCode) {
-                hotKeyNewPressedMap.put(markCode, true);
+                if (!handler.handle(markCode)) {
+                    hotKeyNewPressedMap.put(markCode, true);
+                }
             }
         });
     }

@@ -2,46 +2,79 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 public class Player {
-    int oneBeatMS = 500; // speed
-    int startDalay = 2000;
-    KeyboardControler keyboardControler = new KeyboardControler();
-    ArrayList<OneTimeNote> notes;
-
-    Player() {
+    private static Player INSTANCE = new Player();
+    public static Player getInstance() {
+        return INSTANCE;
+    }
+    private Player() {
+        System.out.println("Player()");
     }
 
-    Player(int startDalay) {
+    int oneBeatMS = 500; // speed
+    private int startDalay = 0;
+    KeyboardControler keyboardControler = new KeyboardControler();
+    ArrayList<OneTimeNote> notes;
+    private volatile boolean playing = false;
+    private boolean shouldStop = false;
+
+    public boolean isPlaying() {
+        return playing;
+    }
+
+    public void stop() {
+        shouldStop = true;
+    }
+
+    public void setStartDalay(int startDalay) {
         this.startDalay = startDalay;
     }
 
-
     public void playMusic(String musicScore) throws Exception {
-        keyboardControler.KeyboardControl(startDalay);
-        decode(musicScore);
-        for (OneTimeNote oneTimeNote : notes) {
-            PlayOne(oneTimeNote);
+        synchronized (INSTANCE) {
+            playing = true;
+            if (startDalay > 0) {
+                keyboardControler.KeyboardControl(startDalay);
+            }
+            decode(musicScore);
+            for (OneTimeNote oneTimeNote : notes) {
+                PlayOne(oneTimeNote);
+            }
+            playing = false;
         }
     }
     public void playMusic(int speed, String musicScore) throws Exception {
+        playing = true;
         oneBeatMS = speed;
         playMusic(musicScore);
+        playing = false;
     }
 
     public void playMusic(String musicScore1, String musicScore2) throws Exception {
-        keyboardControler.KeyboardControl(startDalay);
-        decode(musicScore1, musicScore2);
-        for (OneTimeNote oneTimeNote : notes) {
-            PlayOne(oneTimeNote);
+        synchronized (INSTANCE) {
+            playing = true;
+            if (startDalay > 0) {
+                keyboardControler.KeyboardControl(startDalay);
+            }
+            decode(musicScore1, musicScore2);
+            for (OneTimeNote oneTimeNote : notes) {
+                if (shouldStop) {
+                    shouldStop = false;
+                    break;
+                }
+                PlayOne(oneTimeNote);
+            }
+            playing = false;
         }
     }
     public void playMusic(int speed, String musicScore1, String musicScore2) throws Exception {
+        playing = true;
         oneBeatMS = speed;
         playMusic(musicScore1, musicScore2);
+        playing = false;
     }
 
     public void PlayOne(OneTimeNote oneTimeNote) throws Exception {
-        judgeAndDoStop();
-
+//        System.out.println(oneTimeNote.toString());
         int delay = (int)(oneBeatMS * oneTimeNote.times_beat);
         switch (oneTimeNote.nNotes) {
             case 1:
@@ -71,14 +104,6 @@ public class Player {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-        }
-    }
-
-    private void judgeAndDoStop() throws Exception {
-        if (HotKey.getInstance().isNewKeyPressed(KeyEvent.VK_F5)) {
-            HotKey.getInstance().cleanUp();
-            System.out.println("检测到按下F5，直接结束。");
-            System.exit(0);
         }
     }
 
