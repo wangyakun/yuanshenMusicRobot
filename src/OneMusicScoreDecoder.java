@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * @Description: PACKAGE_NAME
  * @version: 1.0
  */
-public class Decoder {
+public class OneMusicScoreDecoder {
     OneTimeNote oneTimeNote = new OneTimeNote();
     String note = "";
     boolean inBracket = false;

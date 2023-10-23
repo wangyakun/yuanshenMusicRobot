@@ -1,7 +1,7 @@
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-public class Player {
+public class Player implements HotKeyObverser{
     private static Player INSTANCE = new Player();
     public static Player getInstance() {
         return INSTANCE;
@@ -16,10 +16,6 @@ public class Player {
     ArrayList<OneTimeNote> notes;
     private volatile boolean playing = false;
     private boolean shouldStop = false;
-
-    public boolean isPlaying() {
-        return playing;
-    }
 
     public void stop() {
         shouldStop = true;
@@ -107,18 +103,18 @@ public class Player {
         }
     }
 
-    Decoder decoder = new Decoder();
+    OneMusicScoreDecoder oneMusicScoreDecoder = new OneMusicScoreDecoder();
     private void decode(String musicScore) throws Exception {
         notes = new ArrayList<>();
-        decoder.decode(musicScore, notes);
+        oneMusicScoreDecoder.decode(musicScore, notes);
     }
 
     private void decode(String musicScore1, String musicScore2) throws Exception {
         notes = new ArrayList<>();
         ArrayList<OneTimeNote> notes_high = new ArrayList<>();
-        decoder.decode(musicScore1, notes_high);
+        oneMusicScoreDecoder.decode(musicScore1, notes_high);
         ArrayList<OneTimeNote> notes_low = new ArrayList<>();
-        decoder.decode(musicScore2, notes_low);
+        oneMusicScoreDecoder.decode(musicScore2, notes_low);
         merge(notes, notes_high, notes_low);
     }
 
@@ -175,4 +171,20 @@ public class Player {
         out.add(newNote);
     }
 
+    @Override
+    public void update(int keyCode) {
+        if (keyCode == KeyEvent.VK_F5) {
+            if (playing) {
+                stop();
+            } else {
+                new Thread(() -> {
+                    try {
+                        playMusic(600, MusicScore.MaXiTuan, MusicScore.MaXiTuan_low);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }).start();
+            }
+        }
+    }
 }
