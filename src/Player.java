@@ -10,10 +10,8 @@ public class Player implements HotKeyObverser{
         System.out.println("Player()");
     }
 
-    int oneBeatMS = 500; // speed
-    private int startDalay = 0;
+    MusicScoresDecoder musicScoresDecoder = new MusicScoresDecoder();
     KeyboardControler keyboardControler = new KeyboardControler();
-    ArrayList<OneTimeNote> notes;
     private volatile boolean playing = false;
     private boolean shouldStop = false;
 
@@ -21,55 +19,58 @@ public class Player implements HotKeyObverser{
         shouldStop = true;
     }
 
-    public void setStartDalay(int startDalay) {
-        this.startDalay = startDalay;
-    }
-
-    public void playMusic(String musicScore) throws Exception {
-        synchronized (INSTANCE) {
-            playing = true;
-            if (startDalay > 0) {
-                keyboardControler.KeyboardControl(startDalay);
-            }
-            decode(musicScore);
-            for (OneTimeNote oneTimeNote : notes) {
-                PlayOne(oneTimeNote);
-            }
-            playing = false;
+    public void play() throws Exception {
+        MusicScores musicScores = musicScoresDecoder.decodeFromFile();
+        String play_mod = musicScores.global_settings.getOrDefault("play_mode", "hotkey");
+        if (play_mod.equals("single")) {
+            System.out.println("进入单曲模式，播放1首曲子后退出程序");
+            playMusicFromFile();
+        } else if (play_mod.equals("hotkey")) {
+            System.out.println("进入热键模式， --f5：开始/停止播放， --f11：退出程序");
+            HotKey.getInstance().attach(Player.getInstance());
+            HotKey.getInstance().attach(ExitHotKeyHandler.getInstance());
         }
     }
-    public void playMusic(int speed, String musicScore) throws Exception {
-        playing = true;
-        oneBeatMS = speed;
-        playMusic(musicScore);
-        playing = false;
-    }
 
-    public void playMusic(String musicScore1, String musicScore2) throws Exception {
+    public void playMusicFromFile() throws Exception {
         synchronized (INSTANCE) {
             playing = true;
-            if (startDalay > 0) {
-                keyboardControler.KeyboardControl(startDalay);
+
+            MusicScores musicScores = musicScoresDecoder.decodeFromFile();
+            int startDelay = Integer.parseInt(musicScores.global_settings.getOrDefault("start_delay", "0"));
+            if (startDelay > 0) {
+                keyboardControler.KeyboardControl(startDelay);
             }
-            decode(musicScore1, musicScore2);
-            for (OneTimeNote oneTimeNote : notes) {
-                if (shouldStop) {
-                    shouldStop = false;
-                    break;
+            for (MusicScores.MusicScore score : musicScores.scores) {
+                if (musicScores.global_settings.getOrDefault("default_play", "false").equals("true")
+                        || score.settings.getOrDefault("play", "false").equals("true")) {
+                    int oneBeatMS = Integer.parseInt(score.settings.getOrDefault("speed", "500"));
+                    ArrayList<OneTimeNote> merged_notes = null;
+                    for (String score_part : score.score_parts) {
+                        ArrayList<OneTimeNote> notes = decodeScore(score_part);
+                        if (merged_notes == null) {
+                            merged_notes = notes;
+                        } else {
+                            merged_notes = merge(merged_notes, notes);
+                        }
+                    }
+                    if (merged_notes != null) {
+                        for (OneTimeNote oneTimeNote : merged_notes) {
+                            if (shouldStop) {
+                                shouldStop = false;
+                                break;
+                            }
+                            PlayOne(oneTimeNote, oneBeatMS);
+                        }
+                    }
                 }
-                PlayOne(oneTimeNote);
             }
+
             playing = false;
         }
     }
-    public void playMusic(int speed, String musicScore1, String musicScore2) throws Exception {
-        playing = true;
-        oneBeatMS = speed;
-        playMusic(musicScore1, musicScore2);
-        playing = false;
-    }
 
-    public void PlayOne(OneTimeNote oneTimeNote) throws Exception {
+    public void PlayOne(OneTimeNote oneTimeNote, int oneBeatMS) throws Exception {
 //        System.out.println(oneTimeNote.toString());
         int delay = (int)(oneBeatMS * oneTimeNote.times_beat);
         switch (oneTimeNote.nNotes) {
@@ -104,21 +105,18 @@ public class Player implements HotKeyObverser{
     }
 
     OneMusicScoreDecoder oneMusicScoreDecoder = new OneMusicScoreDecoder();
-    private void decode(String musicScore) throws Exception {
-        notes = new ArrayList<>();
-        oneMusicScoreDecoder.decode(musicScore, notes);
+    private ArrayList<OneTimeNote> decodeScore(String musicScore) throws Exception {
+        return oneMusicScoreDecoder.decode(musicScore);
     }
 
-    private void decode(String musicScore1, String musicScore2) throws Exception {
-        notes = new ArrayList<>();
-        ArrayList<OneTimeNote> notes_high = new ArrayList<>();
-        oneMusicScoreDecoder.decode(musicScore1, notes_high);
-        ArrayList<OneTimeNote> notes_low = new ArrayList<>();
-        oneMusicScoreDecoder.decode(musicScore2, notes_low);
-        merge(notes, notes_high, notes_low);
+    private ArrayList<OneTimeNote> decodeScore(String musicScore1, String musicScore2) throws Exception {
+        ArrayList<OneTimeNote> notes_high = oneMusicScoreDecoder.decode(musicScore1);
+        ArrayList<OneTimeNote> notes_low = oneMusicScoreDecoder.decode(musicScore2);
+        return merge(notes_high, notes_low);
     }
 
-    private void merge(ArrayList<OneTimeNote> out, ArrayList<OneTimeNote> notes1, ArrayList<OneTimeNote> notes2) {
+    private ArrayList<OneTimeNote> merge(ArrayList<OneTimeNote> notes1, ArrayList<OneTimeNote> notes2) {
+        ArrayList<OneTimeNote> out = new ArrayList<>();
         double timeline1 = 0;
         double timeline2 = 0;
         int index1 = 0;
@@ -160,6 +158,8 @@ public class Player implements HotKeyObverser{
             out.add(new OneTimeNote(notes2.get(index2)));
             index2++;
         }
+
+        return out;
     }
 
     private void mergeOneNote(ArrayList<OneTimeNote> out, ArrayList<OneTimeNote> smallerNotes1, double smallerTimeline, double biggerTimeline, int smallerIndex1) {
@@ -179,7 +179,7 @@ public class Player implements HotKeyObverser{
             } else {
                 new Thread(() -> {
                     try {
-                        playMusic(600, MusicScore.MaXiTuan, MusicScore.MaXiTuan_low);
+                        playMusicFromFile();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

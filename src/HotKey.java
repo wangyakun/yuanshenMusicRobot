@@ -2,7 +2,6 @@ import com.melloware.jintellitype.HotkeyListener;
 import com.melloware.jintellitype.JIntellitype;
 
 import java.awt.event.KeyEvent;
-import java.util.HashMap;
 
 /**
  * @Auther: 即兴幻想曲

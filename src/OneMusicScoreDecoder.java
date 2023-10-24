@@ -25,7 +25,8 @@ public class OneMusicScoreDecoder {
     }
     Settings settings = new Settings();
 
-    public void decode(String musicScore, ArrayList<OneTimeNote> notes) throws Exception {
+    public ArrayList<OneTimeNote> decode(String musicScore) throws Exception {
+        ArrayList<OneTimeNote> notes = new ArrayList<>();
         decodeInit();
         String tempSettings = "";
         for (char c : musicScore.toCharArray()) {
@@ -117,6 +118,7 @@ public class OneMusicScoreDecoder {
         }
         checkAndUpdateOutput(notes);
         checkAndDoSettings(notes);
+        return notes;
     }
 
     private void decodeInit() {
