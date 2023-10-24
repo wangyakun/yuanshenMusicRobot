@@ -32,10 +32,47 @@ public class MusicScoresDecoder {
     }
 
     public MusicScores decodeFromFile() {
+        //去除注释
         ArrayList<String> content = getMusicScoresFromFile();
-        MusicScores musicScores = new MusicScores();
+        boolean inBigAnnotation = false;
         ListIterator<String> iterator = content.listIterator();
+        while (iterator.hasNext()) {
+            String line = iterator.next();
+            if (inBigAnnotation) {
+                if (line.contains("*/")) {
+                    String[] line_splits = line.split("\\*/");
+                    if (line_splits.length > 0) {
+                        String new_line = line_splits[line_splits.length - 1];
+                        if (new_line.startsWith("//")) {
+                            iterator.remove();
+                        } else {
+                            iterator.set(new_line);
+                        }
+                    } else {
+                        iterator.remove();
+                    }
+                    inBigAnnotation = false;
+                } else {
+                    iterator.remove();
+                }
+            } else {
+                if (line.startsWith("//")) {
+                    iterator.remove();
+                } else if (line.contains("/*")) {
+                    String[] line_splits = line.split("/\\*");
+                    if (line_splits.length > 0) {
+                        String new_line = line_splits[0];
+                        iterator.set(new_line);
+                    } else {
+                        iterator.remove();
+                    }
+                    inBigAnnotation = true;
+                }
+            }
+        }
         //decode global settings
+        MusicScores musicScores = new MusicScores();
+        iterator = content.listIterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
             if (line.charAt(0) == '{' && line.charAt(line.length() - 1) == '}') {

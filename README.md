@@ -33,8 +33,8 @@ play_mode :
 play:
     
     说明 : 该曲目是否播放
-    范围 : {true, false}
-    默认值 : false
+    范围 : {true, false, unset}
+    默认值 : unset
 
 speed:
     

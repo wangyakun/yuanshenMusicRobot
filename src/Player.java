@@ -35,7 +35,7 @@ public class Player implements HotKeyObverser{
     public void playMusicFromFile() throws Exception {
         synchronized (INSTANCE) {
             playing = true;
-
+            System.out.println("播放开始");
             MusicScores musicScores = musicScoresDecoder.decodeFromFile();
             int startDelay = Integer.parseInt(musicScores.global_settings.getOrDefault("start_delay", "0"));
             if (startDelay > 0) {
@@ -43,8 +43,10 @@ public class Player implements HotKeyObverser{
             }
             for (MusicScores.MusicScore score : musicScores.scores) {
                 if (musicScores.global_settings.getOrDefault("default_play", "false").equals("true")
-                        || score.settings.getOrDefault("play", "false").equals("true")) {
+                        && !score.settings.getOrDefault("play", "unset").equals("false")
+                        || score.settings.getOrDefault("play", "unset").equals("true")) {
                     int oneBeatMS = Integer.parseInt(score.settings.getOrDefault("speed", "500"));
+                    System.out.println("正在播放：" + score.getName());
                     ArrayList<OneTimeNote> merged_notes = null;
                     for (String score_part : score.score_parts) {
                         ArrayList<OneTimeNote> notes = decodeScore(score_part);
@@ -65,7 +67,7 @@ public class Player implements HotKeyObverser{
                     }
                 }
             }
-
+            System.out.println("播放结束");
             playing = false;
         }
     }
