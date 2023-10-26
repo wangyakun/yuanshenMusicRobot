@@ -24,10 +24,21 @@ public class OneMusicScoreDecoder {
         }
     }
     Settings settings = new Settings();
+    public void setKey(char key) {
+        this.key = key;
+    }
+    char key = 'C';
+    public void setOriginOffset(int originOffset) {
+        this.originOffset = originOffset;
+    }
+    int originOffset = 0;
+
+    OneMusicScoreDecoder() {
+        decodeInit();
+    }
 
     public ArrayList<OneTimeNote> decode(String musicScore) throws Exception {
         ArrayList<OneTimeNote> notes = new ArrayList<>();
-        decodeInit();
         String tempSettings = "";
         for (char c : musicScore.toCharArray()) {
             switch (c) {
@@ -121,7 +132,7 @@ public class OneMusicScoreDecoder {
         return notes;
     }
 
-    private void decodeInit() {
+    void decodeInit() {
         oneTimeNote = new OneTimeNote();
         note = "";
         inBracket = false;
@@ -130,11 +141,13 @@ public class OneMusicScoreDecoder {
         calcOperator = "";
         calcNum = 0;
         settings = new Settings();
+        key = 'C';
+        originOffset = 0;
     }
 
     private void checkAndUpdateOutput(ArrayList<OneTimeNote> notes) {
         if (!note.equals("") && OneTimeNote.isNote(note)) {
-            oneTimeNote.addKey(note);
+            oneTimeNote.addNote(note);
             note = "";
             if (!inBracket) {
                 notes.add(oneTimeNote);
@@ -144,16 +157,18 @@ public class OneMusicScoreDecoder {
     }
 
     private void checkAndDoSettings(ArrayList<OneTimeNote> notes) {
-        if (settings.haveSettings) {
-            if (settings.settings.equals("+8")) {
-                for (OneTimeNote note : notes) {
-                    note.upOctave();
-                }
-            } else if (settings.settings.equals("-8")) {
-                for (OneTimeNote note : notes) {
-                    note.downOctave();
-                }
+        int finalOffset = 0;
+        finalOffset += key - 'C';
+        finalOffset += originOffset == 0 ? 0 : (originOffset > 0 ? originOffset - 1 : originOffset + 1);
+        if (settings.haveSettings && settings.settings.matches("[\\+-][0-9]+")) {
+            int scorePartOffset = Integer.parseInt(settings.settings);
+            finalOffset += scorePartOffset == 0 ? 0 : (scorePartOffset > 0 ? scorePartOffset - 1 : scorePartOffset + 1);
+        }
+        if (finalOffset != 0) {
+            for (OneTimeNote note : notes) {
+                note.modifyNote(finalOffset);
             }
         }
     }
+
 }
