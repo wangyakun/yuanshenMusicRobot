@@ -123,8 +123,13 @@ class OneTimeNote {
                 return note;
             }
             int i = note_int.get(note);
-            i = (i + offset > 0 && i + offset <= 21) ? i + offset : i;
-            return int_note.get(i);
+            int j = i + offset;
+            if ( j > 21) {
+                j = 14 + (j % 7);
+            } else if (j <= 0) {
+                j = j % 7 + 7;
+            }
+            return int_note.get(j);
         }
         static String modifyNote(String note, char key) throws Exception {
             key = Character.toUpperCase(key);
@@ -163,4 +168,5 @@ class OneTimeNote {
                 ", times_beat=" + times_beat +
                 '}';
     }
+
 }
